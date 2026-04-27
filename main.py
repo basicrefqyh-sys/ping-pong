@@ -18,6 +18,8 @@ class GameplaySprite(sprite.Sprite):
     def reset(self):
         window.blit(self.image, (self.rect.x,self.rect.y))
 class Player(GameplaySprite):
+    score = 0
+
     def update_left(self):
         key_pressed = key.get_pressed()
         if key_pressed[K_s] and self.rect.y < window_height - self.size_y:
@@ -31,12 +33,28 @@ class Player(GameplaySprite):
             self.rect.y += self.speed
         if key_pressed[K_UP] and self.rect.y > 0:
             self.rect.y -= self.speed
-racket1 = Player("racket.png", 50, window_height/2, 25, 90, 10)
-racket2 = Player("racket.png", 650, window_height/2, 25, 90, 10)
 
-ball = GameplaySprite("tenis_ball.png", 350, 225, 50,50, 10)
+class Ball(GameplaySprite):
+    direction_x = 1
+    direction_y = 1
+
+    def update(self):
+        self.rect.x += self.direction_x * self.speed
+        self.rect.y += self.direction_y * self.speed
+
+        if self.rect.bottom > window_height or self.rect.top < 0:
+            self.direction_y *= -1
+
+racket1 = Player("racket.png", 50, window_height/2, 25, 200, 10)
+racket2 = Player("racket.png", 1030, window_height/2, 25, 200, 10)
+
+ball = Ball("tenis_ball.png", 350, 225, 50,50, 10)
 clock = time.Clock()
 
+import time
+
+font.init()
+fontstyle = font.SysFont('Arial', 25)
 is_running = True
 is_playing = True
 
@@ -51,7 +69,41 @@ while is_running:
         racket1.update_left()
         racket2.reset()
         racket2.update_right()
+        ball.update()
         ball.reset()
+
+        if sprite.collide_rect(ball, racket1 ) or sprite.collide_rect(ball, racket2 ):
+            ball.direction_x *= -1
+
+        if ball.rect.x < 0:
+            racket2.score += 1
+            ball.rect.x = 350
+            ball.rect.y = 225
+
+            time.sleep(1)
+        
+        if ball.rect.right > window_width:
+            racket1.score += 1
+            ball.rect.x = 350
+            ball.rect.y = 225
+
+            time.sleep(1)
+
+        if racket1.score >= 3:
+            win_text = fontstyle.render("Left player win", 1, (255,255,255))
+            window.blit(win_text, (window_width // 2, window_height // 2))
+            is_playing = False
+
+        elif racket2.score >= 3:
+            win_text = fontstyle.render("Right player win", 1, (255,255,255))
+            window.blit(win_text, (window_width // 2, window_height // 2))
+            is_playing = False
+
+
+        score_text = fontstyle.render(str(racket1.score) + " | " + str(racket2.score), 1, (255,255,255))
+        window.blit(score_text,(window_width // 2, 25))
+
+
 
     display.update()
     clock.tick(30)
